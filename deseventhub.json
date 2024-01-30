@@ -1,0 +1,97 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+		"desEventHubNamespace": {
+		    "type": "string",
+			"defaultValue": "deseventhub"
+		},
+		"desEventHubCINamespace": {
+		    "type": "string",
+			"defaultValue": "deseventhubCI"
+		},
+		"eventHubName": {
+			"type": "array",
+			"defaultValue": [
+				"pull-event",
+				"eot",
+				"error",
+				"if",
+				"if-raw",
+				"pull-event-multi-part",
+				"multi-part",
+				"pull-metadata",
+				"table-update",
+				"assembled-event"
+			]
+		},
+		"eventHubNameCI": {
+			"type": "string",
+			"defaultValue": "des-schema"
+		}
+    },
+    "variables": {
+        "location": "[resourceGroup().location]"
+    },
+    "resources": [
+	{
+            "comments": "EVENTHUB NAMESPACE",
+            "apiVersion": "2018-01-01-preview",
+            "name": "[parameters('desEventHubNamespace')]",
+            "type": "Microsoft.EventHub/namespaces",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard"
+            }
+    },
+		
+	{
+            "comments": "EVENTHUB NAMESPACE",
+            "apiVersion": "2018-01-01-preview",
+            "name": "[parameters('desEventHubCINamespace')]",
+            "type": "Microsoft.EventHub/namespaces",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard"
+            }
+    },
+		
+	{
+	        "comments": "EVENTHUB",
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "name": "[concat(parameters('desEventHubNamespace'), '/', parameters('eventHubName')[copyIndex()])]",
+            "location": "[variables('location')]",
+			"dependsOn": [
+				"[resourceId('Microsoft.EventHub/namespaces', parameters('desEventHubNamespace'))]"
+			],
+            "properties": {
+                "messageRetentionInDays": 7,
+                "partitionCount": 1
+            },
+			"copy": {
+				"name": "eventhubcopy",
+				"count": "[length(parameters('eventHubName'))]"
+			}
+    },
+		
+	{
+	        "comments": "EVENTHUB",
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "name": "[concat(parameters('desEventHubCINamespace'), '/', parameters('eventHubNameCI'))]",
+            "location": "[variables('location')]",
+			"dependsOn": [
+				"[resourceId('Microsoft.EventHub/namespaces', parameters('desEventHubCINamespace'))]"
+			],
+            "properties": {
+                "messageRetentionInDays": 7,
+                "partitionCount": 1
+            }
+    }
+
+    ],
+    "outputs": {}
+}
